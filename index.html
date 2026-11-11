@@ -193,7 +193,8 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
 <script>
 const SUPABASE_URL = "https://msnxdfjjdtqcmbrbneuw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2JmVVIRGm6ZSwo1tYx_pg_JvCalA4S"; 
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+// تصحيح الخطأ هنا: استخدام supabaseClient بدلاً من supabase
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let currentChatId = null;
@@ -223,15 +224,11 @@ async function register() {
 
   document.getElementById('reg-btn').innerText = 'جاري التسجيل...';
   try {
-    // استخدام دومين example.com لأنه مقبول دائماً في Supabase للتجارب
     let email = username + "@example.com";
-    
-    // 1. إنشاء الحساب
-    const { data: auth, error: authErr } = await supabase.auth.signUp({ email, password: pass });
+    const { data: auth, error: authErr } = await supabaseClient.auth.signUp({ email, password: pass });
     if (authErr) throw authErr;
     
-    // 2. إضافة البيانات لجدول profiles
-    const { error: profErr } = await supabase.from('profiles').insert([{ id: auth.user.id, username: username, name: name }]);
+    const { error: profErr } = await supabaseClient.from('profiles').insert([{ id: auth.user.id, username: username, name: name }]);
     if (profErr) throw profErr;
     
     alert('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.');
@@ -250,7 +247,7 @@ async function login() {
 
   document.getElementById('login-btn').innerText = 'جاري الدخول...';
   try {
-    const { error } = await supabase.auth.signInWithPassword({ email: username + "@example.com", password: pass });
+    const { error } = await supabaseClient.auth.signInWithPassword({ email: username + "@example.com", password: pass });
     if (error) throw error;
     checkSession();
   } catch (e) { 
@@ -259,12 +256,12 @@ async function login() {
   finally { document.getElementById('login-btn').innerText = 'دخول'; }
 }
 
-async function logout() { await supabase.auth.signOut(); location.reload(); }
+async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
 
 async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
-    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
     
     if (profile) {
       if(profile.is_banned) { alert("عذراً، هذا الحساب محظور."); logout(); return; }
@@ -274,8 +271,6 @@ async function checkSession() {
       updateProfileUI();
       showPage('home');
       if(profile.role === 'admin') document.getElementById('admin-section').classList.remove('hidden');
-    } else {
-      alert("حدث خطأ: الحساب موجود في المصادقة ولكن لا يوجد ملف شخصي. تواصل مع الدعم.");
     }
   } else {
     document.getElementById('app-page').classList.add('hidden');
@@ -307,7 +302,7 @@ function updateProfileUI() {
 
 async function saveProfile() {
   let bio = document.getElementById('prof-bio').value.trim();
-  await supabase.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
+  await supabaseClient.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
   currentUser.bio = bio; showToast('تم حفظ التعديلات');
 }
 
@@ -315,9 +310,9 @@ async function uploadAvatar() {
   let file = document.getElementById('avatar-img').files[0]; if(!file) return;
   showToast('جاري رفع الصورة...');
   let fn = `avatars/${currentUser.id}_${Date.now()}.png`;
-  await supabase.storage.from('media').upload(fn, file);
-  let { data } = supabase.storage.from('media').getPublicUrl(fn);
-  await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
+  await supabaseClient.storage.from('media').upload(fn, file);
+  let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
+  await supabaseClient.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
   currentUser.avatar_url = data.publicUrl; updateProfileUI(); showToast('تم تغيير الصورة');
 }
 
@@ -325,7 +320,7 @@ async function createPost() {
   let text = document.getElementById('new-post-text').value.trim();
   if(!text) return;
   document.getElementById('new-post-text').value = '';
-  await supabase.from('posts').insert([{ user_id: currentUser.id, content: text }]);
+  await supabaseClient.from('posts').insert([{ user_id: currentUser.id, content: text }]);
   loadPosts();
 }
 
@@ -333,14 +328,14 @@ async function uploadPost() {
   let file = document.getElementById('post-img').files[0]; if(!file) return;
   showToast('جاري رفع الصورة...');
   let fn = `posts/${currentUser.id}_${Date.now()}.png`;
-  await supabase.storage.from('media').upload(fn, file);
-  let { data } = supabase.storage.from('media').getPublicUrl(fn);
-  await supabase.from('posts').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
+  await supabaseClient.storage.from('media').upload(fn, file);
+  let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
+  await supabaseClient.from('posts').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
   loadPosts(); showToast('تم النشر');
 }
 
 async function loadPosts() {
-  let { data: posts } = await supabase.from('posts').select('*, profiles(name, username, avatar_url)').order('created_at', { ascending: false });
+  let { data: posts } = await supabaseClient.from('posts').select('*, profiles(name, username, avatar_url)').order('created_at', { ascending: false });
   if(!posts) return;
   document.getElementById('posts-list').innerHTML = posts.map(p => `
     <div class="box">
@@ -361,7 +356,7 @@ async function loadPosts() {
 // ================= STORIES =================
 async function loadStories() {
   let bar = document.getElementById('story-bar');
-  let { data: stories } = await supabase.from('stories').select('*, profiles(name, avatar_url)').order('created_at', { ascending: false });
+  let { data: stories } = await supabaseClient.from('stories').select('*, profiles(name, avatar_url)').order('created_at', { ascending: false });
   if(!stories) return;
   
   let html = `<div class="story-item" onclick="document.getElementById('story-file').click()">
@@ -388,9 +383,9 @@ storyInput.onchange = async () => {
   let file = storyInput.files[0]; if(!file) return;
   showToast('جاري رفع القصة...');
   let fileName = `stories/${currentUser.id}_${Date.now()}.png`;
-  await supabase.storage.from('media').upload(fileName, file);
-  let { data } = supabase.storage.from('media').getPublicUrl(fileName);
-  await supabase.from('stories').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
+  await supabaseClient.storage.from('media').upload(fileName, file);
+  let { data } = supabaseClient.storage.from('media').getPublicUrl(fileName);
+  await supabaseClient.from('stories').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
   loadStories(); showToast('تمت إضافة القصة');
 };
 
@@ -405,7 +400,7 @@ function viewStory(url) {
 // ================= FRIENDS & REPORTING =================
 async function loadFriends() {
   let q = document.getElementById('search-friend').value.toLowerCase();
-  let { data: users } = await supabase.from('profiles').select('*').neq('id', currentUser.id).eq('is_banned', false);
+  let { data: users } = await supabaseClient.from('profiles').select('*').neq('id', currentUser.id).eq('is_banned', false);
   if(!users) return;
   let filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q));
   document.getElementById('friends-list').innerHTML = filtered.map(u => `
@@ -429,7 +424,7 @@ function openReport(id, type) {
 
 async function submitReport() {
   let reason = document.getElementById('report-reason').value;
-  await supabase.from('reports').insert([{ reporter_id: currentUser.id, reported_user_id: reportTargetId, reason: reason }]);
+  await supabaseClient.from('reports').insert([{ reporter_id: currentUser.id, reported_user_id: reportTargetId, reason: reason }]);
   closeModal('report-modal');
   showToast('تم إرسال البلاغ للإدارة');
 }
@@ -438,37 +433,37 @@ async function submitReport() {
 async function createGroupChat() {
   let name = prompt("اسم المجموعة:");
   if(!name) return;
-  const { data: newChat } = await supabase.from('chats').insert([{ type: 'group', name: name, created_by: currentUser.id }]).select().single();
-  await supabase.from('chat_members').insert([{ chat_id: newChat.id, user_id: currentUser.id }]);
+  const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'group', name: name, created_by: currentUser.id }]).select().single();
+  await supabaseClient.from('chat_members').insert([{ chat_id: newChat.id, user_id: currentUser.id }]);
   loadChats(); showToast('تم إنشاء المجموعة');
 }
 
 async function startChat(targetId, targetName) {
-  const { data: existing } = await supabase.from('chat_members').select('chat_id').eq('user_id', currentUser.id);
+  const { data: existing } = await supabaseClient.from('chat_members').select('chat_id').eq('user_id', currentUser.id);
   let chatId = null;
   if(existing) {
     for(let c of existing) {
-      const { data: members } = await supabase.from('chat_members').select('user_id').eq('chat_id', c.chat_id);
+      const { data: members } = await supabaseClient.from('chat_members').select('user_id').eq('chat_id', c.chat_id);
       if(members.length === 2 && members.find(m => m.user_id === targetId)) { chatId = c.chat_id; break; }
     }
   }
   if(!chatId) {
-    const { data: newChat } = await supabase.from('chats').insert([{ type: 'private', created_by: currentUser.id }]).select().single();
+    const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'private', created_by: currentUser.id }]).select().single();
     chatId = newChat.id;
-    await supabase.from('chat_members').insert([{ chat_id: chatId, user_id: currentUser.id }]);
-    await supabase.from('chat_members').insert([{ chat_id: chatId, user_id: targetId }]);
+    await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: currentUser.id }]);
+    await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: targetId }]);
   }
   openChat(chatId, targetName, 'private');
 }
 
 async function loadChats() {
-  const { data: chats } = await supabase.from('chat_members').select('chat_id, chats(id, type, name)').eq('user_id', currentUser.id);
+  const { data: chats } = await supabaseClient.from('chat_members').select('chat_id, chats(id, type, name)').eq('user_id', currentUser.id);
   if(!chats || chats.length === 0) { document.getElementById('chats-list').innerHTML = '<p style="color:#aaa;">لا توجد دردشات.</p>'; return; }
   let html = '';
   for(let c of chats) {
     let title = c.chats.name || 'محادثة';
     if(c.chats.type === 'private') {
-      const { data: members } = await supabase.from('chat_members').select('user_id, profiles(name)').eq('chat_id', c.chat_id).neq('user_id', currentUser.id);
+      const { data: members } = await supabaseClient.from('chat_members').select('user_id, profiles(name)').eq('chat_id', c.chat_id).neq('user_id', currentUser.id);
       if(members && members.length > 0) title = members[0].profiles.name;
     }
     html += `<div style="padding:15px; border-bottom:1px solid #333; cursor:pointer;" onclick="openChat(${c.chat_id}, '${title}', '${c.chats.type}')">
@@ -494,12 +489,12 @@ async function openChat(id, title, type) {
     document.getElementById('chat-input-area').classList.remove('hidden');
   }
 
-  if(chatChannel) supabase.removeChannel(chatChannel);
-  chatChannel = supabase.channel('chat_'+id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, () => loadMessages()).subscribe();
+  if(chatChannel) supabaseClient.removeChannel(chatChannel);
+  chatChannel = supabaseClient.channel('chat_'+id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, () => loadMessages()).subscribe();
 }
 
 async function loadMessages() {
-  const { data: msgs } = await supabase.from('messages').select('*, profiles(name)').eq('chat_id', currentChatId).order('created_at', { ascending: true });
+  const { data: msgs } = await supabaseClient.from('messages').select('*, profiles(name)').eq('chat_id', currentChatId).order('created_at', { ascending: true });
   let container = document.getElementById('chat-messages');
   if(!msgs) return;
   container.innerHTML = msgs.map(m => {
@@ -520,23 +515,23 @@ async function sendMessage() {
   let text = document.getElementById('chat-input').value.trim();
   if(!text || !currentChatId) return;
   document.getElementById('chat-input').value = '';
-  await supabase.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, content: text }]);
+  await supabaseClient.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, content: text }]);
 }
 
 async function sendChatMedia() {
   let file = document.getElementById('chat-img').files[0]; if(!file || !currentChatId) return;
   showToast('جاري الرفع...');
   let fn = `chat/${currentUser.id}_${Date.now()}.png`;
-  await supabase.storage.from('media').upload(fn, file);
-  let { data } = supabase.storage.from('media').getPublicUrl(fn);
-  await supabase.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, media_url: data.publicUrl }]);
+  await supabaseClient.storage.from('media').upload(fn, file);
+  let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
+  await supabaseClient.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, media_url: data.publicUrl }]);
 }
 
 function openChatSettings() { showToast("إعدادات المحادثة قريباً"); }
 
 // ================= ADMIN DASHBOARD =================
 async function loadAdminUsers() {
-  const { data: users } = await supabase.from('profiles').select('*').neq('role', 'admin');
+  const { data: users } = await supabaseClient.from('profiles').select('*').neq('role', 'admin');
   let html = '';
   users.forEach(u => {
     let banEnd = u.msg_ban_expires ? new Date(u.msg_ban_expires) : null;
@@ -554,18 +549,18 @@ async function loadAdminUsers() {
 
 async function banUser(id) {
   if(!confirm("حظر نهائي؟")) return;
-  await supabase.from('profiles').update({ is_banned: true }).eq('id', id);
+  await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', id);
   loadAdminUsers();
 }
 
 async function muteUser(id) {
   let date = new Date(); date.setDate(date.getDate() + 3);
-  await supabase.from('profiles').update({ msg_ban_expires: date.toISOString() }).eq('id', id);
+  await supabaseClient.from('profiles').update({ msg_ban_expires: date.toISOString() }).eq('id', id);
   loadAdminUsers(); showToast('تم الكتم 3 أيام');
 }
 
 async function loadAdminReports() {
-  const { data: reports } = await supabase.from('reports').select('*, profiles!reports_reporter_id_fkey(name), reported:reported_user_id(name)').eq('status', 'pending');
+  const { data: reports } = await supabaseClient.from('reports').select('*, profiles!reports_reporter_id_fkey(name), reported:reported_user_id(name)').eq('status', 'pending');
   if(!reports || reports.length === 0) { document.getElementById('admin-content').innerHTML = '<p>لا توجد بلاغات جديدة.</p>'; return; }
   let html = '';
   reports.forEach(r => {
@@ -583,10 +578,10 @@ async function loadAdminReports() {
 }
 
 async function resolveReport(id, action) {
-  await supabase.from('reports').update({ status: 'resolved' }).eq('id', id);
+  await supabaseClient.from('reports').update({ status: 'resolved' }).eq('id', id);
   if(action === 'action') {
-    let { data: rep } = await supabase.from('reports').select('reported_user_id').eq('id', id).single();
-    await supabase.from('profiles').update({ is_banned: true }).eq('id', rep.reported_user_id);
+    let { data: rep } = await supabaseClient.from('reports').select('reported_user_id').eq('id', id).single();
+    await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', rep.reported_user_id);
     showToast('تم حظر المستخدم');
   }
   loadAdminReports();
@@ -595,4 +590,4 @@ async function resolveReport(id, action) {
 checkSession();
 </script>
 </body>
-</html>
+                                                                                               </html>
