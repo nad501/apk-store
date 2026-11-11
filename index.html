@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APK Store</title>
+<style>
+  :root { --bg:#0d0f12; --card:#161a20; --tx:#e6e8eb; --dim:#8a919c; --ac:#3b82f6; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.5 system-ui,sans-serif; }
+  header { padding:18px 22px; border-bottom:1px solid #232830; display:flex; gap:10px; align-items:baseline; }
+  header b { font-size:18px; letter-spacing:.5px; }
+  header span { color:var(--dim); font-size:12px; }
+  main { max-width:860px; margin:0 auto; padding:26px 18px 80px; }
+  .pkg { border:1px solid #232830; border-radius:12px; margin-bottom:14px; overflow:hidden; background:var(--card); }
+  .pkg > h3 { margin:0; padding:14px 16px; background:#12161b; font-size:15px; display:flex; justify-content:space-between; }
+  .pkg > h3 small { color:var(--dim); font-weight:400; }
+  .ver { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid #1c2127; }
+  .ver a { color:var(--ac); text-decoration:none; font-size:13px; font-weight:bold; background:#1e293b; padding:6px 12px; border-radius:6px; }
+  .ver .meta { color:var(--dim); font-size:12px; }
+  #empty { color:var(--dim); font-size:14px; padding:8px 0; }
+</style>
+</head>
+<body>
+<header><b>APK STORE</b><span>direct download · no limits</span></header>
+<main>
+  <h2 style="font-size:16px;margin:0 0 12px;">Available Applications</h2>
+  <div id="list"><div id="empty">loading...</div></div>
+</main>
+
+<script>
+const user = 'nad501'; 
+const repo = 'apk-store';     
+
+fetch(`https://api.github.com/repos/${user}/${repo}/releases`)
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+    if (!data.length) { list.innerHTML = '<div id="empty">No releases yet.</div>'; return; }
+    
+    data.forEach(rel => {
+      const box = document.createElement('div');
+      box.className = 'pkg';
+      
+      const apk = rel.assets.find(a => a.name.endsWith('.apk'));
+      if (!apk) return; 
+      
+      const sizeMB = (apk.size / (1024 * 1024)).toFixed(1) + ' MB';
+      const date = new Date(rel.published_at).toLocaleDateString();
+      
+      box.innerHTML = `
+        <h3>${rel.name || rel.tag_name} <small>${date}</small></h3>
+        <div class="ver">
+          <div>
+            <div style="font-weight:bold;">${apk.name}</div>
+            <div class="meta">${sizeMB}</div>
+          </div>
+          <a href="${apk.browser_download_url}" download>DOWNLOAD</a>
+        </div>
+      `;
+      list.appendChild(box);
+    });
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML = '<div id="empty">Error loading releases. Make sure repo is public.</div>';
+  });
+</script>
+</body>
+</html>
