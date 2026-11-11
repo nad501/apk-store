@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Rat-Man47</title>
+<link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
@@ -193,7 +194,6 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
 <script>
 const SUPABASE_URL = "https://msnxdfjjdtqcmbrbneuw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_2JmVVIRGm6ZSwo1tYx_pg_JvCalA4S"; 
-// تصحيح الخطأ هنا: استخدام supabaseClient بدلاً من supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
@@ -590,4 +590,4 @@ async function resolveReport(id, action) {
 checkSession();
 </script>
 </body>
-                                                                                               </html>
+  </html>
