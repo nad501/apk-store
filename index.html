@@ -17,6 +17,7 @@ body { background: #0f0f13; color: #fff; padding-bottom: 70px; overflow-x: hidde
 input, textarea, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; background: #2a2a35; border: 1px solid #444; color: #fff; border-radius: 8px; outline: none; font-size: 14px; user-select: text; -webkit-user-select: text;}
 button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 14px; }
 .btn-red { background: #dc3545; } .btn-green { background: #28a745; } .btn-gray { background: #444; } .btn-gold { background: #ffd700; color: black; }
+.btn-black-text { background: #dc3545; color: #000; font-weight: 900; }
 .switch-link { text-align:center; cursor:pointer; color:#007bff; margin-top:15px; padding:10px; font-weight: bold; }
 .top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: #dc3545; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 1000; }
 .top-bar h1 { font-size: 18px; color: white; }
@@ -47,11 +48,116 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
 .avatar-lg img { width:100%; height:100%; object-fit:cover; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; justify-content: center; align-items: center; }
 .modal-box { background: #1a1a24; padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; border: 1px solid #444; }
+/* Suspended & Warnings */
+.suspended-screen { position: fixed; inset: 0; background: #fff; color: #000; z-index: 99990; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+.warning-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99999; display: flex; justify-content: center; align-items: center; }
+/* Verification Modal */
+.verify-box { background: #1a1a24; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #444; text-align: center; }
+.verify-icon { font-size: 50px; color: rgba(255, 0, 0, 0.4); font-weight: bold; border: 2px solid rgba(255, 0, 0, 0.4); width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto; border-radius: 10px; }
+.verify-rules { text-align: right; font-size: 13px; color: #ccc; line-height: 1.6; margin-bottom: 15px; }
+.pin-inputs { display: flex; justify-content: center; gap: 5px; margin: 15px 0; direction: ltr; }
+.pin-inputs input { width: 40px; height: 50px; text-align: center; font-size: 20px; font-weight: bold; padding: 0; margin: 0; border-radius: 8px; background: #2a2a35; border: 1px solid #555; }
+/* Call UI */
+.call-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; }
+.call-avatar { width: 120px; height: 120px; border-radius: 50%; background: #333; display: flex; justify-content: center; align-items: center; font-size: 60px; margin-bottom: 20px; border: 3px solid #007bff; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,123,255, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(0,123,255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0,123,255, 0); } }
+.call-btns { display: flex; gap: 40px; margin-top: 40px; }
+.call-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 30px; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; color: white; }
+.call-btn-green { background: #28a745; } .call-btn-red { background: #dc3545; }
+.call-timer { font-size: 24px; font-weight: bold; margin-top: 10px; color: #aaa; }
 </style>
 </head>
 <body>
 
 <div id="toast-msg" class="toast hidden">رسالة</div>
+
+<!-- Call Modals -->
+<div id="incoming-call-modal" class="call-overlay hidden">
+  <div class="call-avatar">👤</div>
+  <h2 id="incoming-caller-name">اسم المتصل...</h2>
+  <p style="color:#aaa; margin-top:10px;">مكالمة صوتية واردة...</p>
+  <div class="call-btns">
+    <button class="call-btn call-btn-red" onclick="rejectCall()">❌</button>
+    <button class="call-btn call-btn-green" onclick="acceptCall()">📞</button>
+  </div>
+</div>
+
+<div id="active-call-modal" class="call-overlay hidden">
+  <div class="call-avatar">👤</div>
+  <h2 id="active-caller-name">جاري الاتصال...</h2>
+  <div class="call-timer" id="call-timer">00:00</div>
+  <div class="call-btns" style="margin-top:20px;">
+    <button class="call-btn call-btn-red" onclick="endCall()" style="width:100px; border-radius:25px;">إنهاء</button>
+  </div>
+</div>
+
+<!-- Verification Modal -->
+<div id="verify-modal" class="modal-overlay hidden">
+  <div class="verify-box">
+    <div class="verify-icon">47☑️</div>
+    <div class="verify-rules">
+      <p>• هذا التوثيق يحمي الحساب من الاختراق او البلاغات الكيدية.</p>
+      <p>• توثيق حسابك يتم بدفع 15$ للأدمن لمنحك هذه العلامة.</p>
+      <p>• اذا واجهت مشاكل قم بمراسلة الأدمن عبر حسابه العام <b>Scaiper47</b>.</p>
+    </div>
+    <h3 style="color:#fff; margin-bottom:10px;">هل أنت متأكد من توثيق حسابك؟</h3>
+    <button class="btn-black-text" onclick="sendVerifyRequest()" style="margin-bottom:10px; display:flex; justify-content:center; align-items:center; gap:10px;">
+      <span>💳 دفع عبر الكارد (6500138547)</span>
+    </button>
+    <p style="font-size:11px; color:#aaa; margin-bottom:10px;">سيتم تحويل المبلغ 15,000 دينار او 15$ مباشرة.</p>
+    <button class="btn-red" onclick="closeModal('verify-modal')">إلغاء</button>
+  </div>
+</div>
+
+<!-- PIN Setup Modal -->
+<div id="pin-modal" class="modal-overlay hidden">
+  <div class="verify-box">
+    <div class="verify-icon">47☑️</div>
+    <h3 style="color:#28a745; margin-bottom:5px;">فريق دعم RatMan</h3>
+    <div class="verify-rules" style="margin-top:15px;">
+      <p>• ضع رمز تشفير قوي مكون من 6 أرقام او رموز غير متشابهه.</p>
+      <p>• سيتم حفظ رسائلك بأمان ولن تُعرض لاي شخص مسجل دخول جديد من غير منطقة او ايبي جهاز اخر.</p>
+      <p>• نتمنى لك وقتاً رائعاً في Rat-Man47.</p>
+    </div>
+    <div class="pin-inputs">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 0)">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 1)">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 2)">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 3)">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 4)">
+      <input type="password" maxlength="1" class="pin-digit" oninput="moveNext(this, 5)">
+    </div>
+    <button class="btn-black-text" onclick="savePin()">حفظ رمز التشفير</button>
+  </div>
+</div>
+
+<!-- Warning Modal -->
+<div id="warning-modal" class="warning-modal hidden">
+  <div class="modal-box" style="text-align:center;">
+    <div id="warn-icon" style="font-size:60px;">🟨</div>
+    <p id="warn-text" style="margin:15px 0; font-size:14px;">لقد أرسلت رموز ممنوعة هذا تحذير اذا استمررت سيتم حظر حسابك لمدة اسبوع.</p>
+    <button class="btn-red" onclick="closeWarning()">موافق</button>
+  </div>
+</div>
+
+<!-- Suspended Screen -->
+<div id="susp-screen" class="suspended-screen hidden">
+  <h2>لقد قمنا بتعليق حسابك</h2>
+  <p>لقد تبقى 47 يوم لإرسال مراجعتك</p>
+  <button class="review-btn" onclick="showAppealForm()">إرسال مراجعة</button>
+  <div id="appeal-form" class="hidden" style="width:100%; max-width:300px; margin-top:20px; text-align:right;">
+    <input type="text" id="appeal-name" placeholder="الاسم الثلاثي">
+    <input type="text" id="appeal-phone" placeholder="رقم الهاتف">
+    <button class="btn-green" onclick="submitAppeal()">إرسال المراجعة</button>
+  </div>
+  <div id="appeal-success" class="hidden" style="margin-top:20px;">
+    <div style="font-size:50px;">⚠️</div>
+    <p style="margin-top:10px;">سيتم مراجعة حسابك خلال يومين او اكثر.</p>
+    <p>سجل دخول في كل مره لترى قرارنا.</p>
+    <p>نحن نقدر صبرك شكراً.</p>
+    <button class="btn-red" onclick="logout()" style="margin-top:20px;">خروج</button>
+  </div>
+</div>
 
 <!-- Auth Page -->
 <div id="auth-page" class="auth-container">
@@ -113,11 +219,15 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
     <div class="top-bar" style="background:#1a1a24; border-bottom:1px solid #333;">
       <div style="cursor:pointer; color:white; font-size:20px;" onclick="showPage('chats')">⬅️</div>
       <h1 id="chat-room-title" style="font-size:16px;">المحادثة</h1>
-      <div style="font-size:20px; cursor:pointer;" onclick="openChatSettings()">⚙️</div>
+      <div style="display:flex; gap:10px;">
+        <div style="font-size:20px; cursor:pointer;" onclick="initiateCall()">📞</div>
+        <div style="font-size:20px; cursor:pointer;" onclick="openGroupSettings()">⚙️</div>
+      </div>
     </div>
     <div class="container" style="margin-top:50px;">
       <div class="chat-messages" id="chat-messages"></div>
-      <div id="chat-ban-msg" class="hidden" style="text-align:center; color:red; padding:10px; background:#330000;">أنت مكتوم من إرسال الرسائل.</div>
+      <div id="chat-ban-msg" class="hidden" style="text-align:center; color:red; padding:10px; background:#330000; border-radius:8px; margin-bottom:10px;">⚠️ تم حظر حسابك لمدة 7 أيام من إرسال الرسائل.</div>
+      <div id="chat-removed-msg" class="hidden" style="text-align:center; color:red; padding:10px; background:#330000; border-radius:8px; margin-bottom:10px;">🤚 تمت إزالتك من هذه المجموعة</div>
       <div class="chat-input-area" id="chat-input-area">
         <input type="file" id="chat-img" accept="image/*" style="display:none;" onchange="sendChatMedia()">
         <button class="btn-gray" style="width:45px; padding:0;" onclick="document.getElementById('chat-img').click()">📎</button>
@@ -133,10 +243,17 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
       <div class="avatar-lg" id="prof-avatar">👤</div>
       <h2 id="prof-name">الاسم</h2>
       <p id="prof-username" style="color:#aaa; margin-bottom:15px;">@user</p>
+      
+      <input type="text" id="edit-name" placeholder="الاسم الجديد" style="margin-top:10px;">
+      <input type="password" id="edit-pass" placeholder="كلمة المرور الجديدة">
+      <button class="btn-blue" onclick="updateProfileInfo()" style="margin-bottom:10px; background:#007bff;">حفظ الاسم وكلمة المرور</button>
+      <p id="name-lock-msg" style="color:red; font-size:12px; display:none;">لا يمكنك تغيير اسمك مره اخرى لمدة 47 يوماً.</p>
+
       <input type="file" id="avatar-img" accept="image/*" style="display:none;" onchange="uploadAvatar()">
       <button class="btn-gray" onclick="document.getElementById('avatar-img').click()" style="margin-bottom:10px;">تغيير الصورة</button>
+      <button class="btn-red" onclick="removeAvatar()" style="margin-bottom:10px;">حذف الصورة</button>
       <textarea id="prof-bio" placeholder="نبذة عنك..." rows="2"></textarea>
-      <button class="btn-green" onclick="saveProfile()">حفظ</button>
+      <button class="btn-green" onclick="saveProfile()">حفظ النبذة</button>
       <button class="btn-red" onclick="logout()" style="margin-top:15px;">تسجيل الخروج</button>
     </div>
   </div>
@@ -145,14 +262,18 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
   <div id="page-settings" class="container hidden" style="margin-top: 60px;">
     <div class="box">
       <h3>الإعدادات</h3>
-      <button class="btn-gray" onclick="showPage('home')" style="margin-top:15px;">رجوع</button>
+      <button class="btn-black-text" onclick="openVerifyModal()" style="margin-bottom:10px; margin-top:15px;">توثيق حسابك</button>
+      <button class="btn-gray" onclick="showPage('home')" style="margin-bottom:10px;">رجوع</button>
+      <button class="btn-red" onclick="showToast('سيتم تمكين هذا الزر قريباً')" style="margin-top:10px; background:#000; color:#00ff00; border:1px solid #00ff00;">💻 اختراق الحساب</button>
     </div>
     
     <div id="admin-section" class="box hidden" style="border-color:gold;">
       <h3 style="color:gold;">👑 لوحة المالك</h3>
-      <div style="display:flex; gap:5px; margin-top:10px;">
+      <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
         <button class="btn-gold" onclick="loadAdminUsers()">المستخدمين</button>
         <button class="btn-gold" onclick="loadAdminReports()">البلاغات</button>
+        <button class="btn-gold" onclick="loadAdminAppeals()">مراجعات المستخدمين</button>
+        <button class="btn-gold" onclick="loadAdminVerifications()">طلبات التوثيق</button>
       </div>
       <div id="admin-content" style="margin-top:15px; font-size:13px;"></div>
     </div>
@@ -162,23 +283,24 @@ button, .btn { background: #007bff; color: #fff; border: none; padding: 10px; bo
   <div id="report-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h3 style="color:red; margin-bottom:15px;">إرسال بلاغ</h3>
-      <p style="font-size:12px; color:#aaa; margin-bottom:10px;">سيتم إرسال هذا البلاغ إلى الإدارة للمراجعة.</p>
       <select id="report-reason">
-        <option value="محتوى مسيء">محتوى مسيء</option>
-        <option value="اختراق أو احتيال">اختراق أو احتيال</option>
-        <option value="مضايقة أو تنمر">مضايقة أو تنمر</option>
-        <option value="انتحال شخصية">انتحال شخصية</option>
+        <option value="مضايقات">مضايقات</option><option value="انتحار">انتحار</option><option value="ارهاب">ارهاب</option>
+        <option value="بيع مخدرات">بيع مخدرات</option><option value="بيع اسلحة">بيع اسلحة</option>
+        <option value="منضمات تسليط عنف">منضمات تسليط عنف</option><option value="منضمات ارهابية">منضمات ارهابية</option>
+        <option value="عنف أسري">عنف أسري</option><option value="عنف جنسي">عنف جنسي</option><option value="استغلالات">استغلالات</option>
       </select>
       <button class="btn-red" onclick="submitReport()">إرسال البلاغ</button>
       <button class="btn-gray" onclick="closeModal('report-modal')" style="margin-top:10px;">إلغاء</button>
     </div>
   </div>
 
-  <div id="chat-settings-modal" class="modal-overlay hidden">
+  <div id="group-settings-modal" class="modal-overlay hidden">
     <div class="modal-box">
-      <h3 style="margin-bottom:15px;">إعدادات المحادثة</h3>
-      <div id="chat-settings-content"></div>
-      <button class="btn-gray" onclick="closeModal('chat-settings-modal')" style="margin-top:15px;">إغلاق</button>
+      <h3 style="margin-bottom:15px;">إعدادات المجموعة</h3>
+      <div id="group-members-list" style="max-height:200px; overflow-y:auto; margin-bottom:15px;"></div>
+      <input type="text" id="add-member-username" placeholder="يوزر الشخص لإضافته">
+      <button class="btn-green" onclick="addMemberToGroup()">إضافة عضو</button>
+      <button class="btn-gray" onclick="closeModal('group-settings-modal')" style="margin-top:10px;">إغلاق</button>
     </div>
   </div>
 
@@ -196,11 +318,9 @@ const SUPABASE_URL = "https://msnxdfjjdtqcmbrbneuw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbnhkZmpqZHRxY21icmJuZXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzOTIwMzYsImV4cCI6MjEwODk2ODAzNn0.zE9_YfSfIsU_enkU-iLxMlEbi7aK45fBrAoLEVr99_g"; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentUser = null;
-let currentChatId = null;
-let currentChatType = null;
-let chatChannel = null;
-let reportTargetId = null;
+let currentUser = null, currentChatId = null, currentChatType = null, currentChatData = null;
+let chatChannel = null, reportTargetId = null, warningLevel = 0;
+let callChannel = null, currentCallId = null, callTimerInterval = null, callSeconds = 0, isCaller = false;
 
 function showToast(msg) {
   let t = document.getElementById('toast-msg');
@@ -213,46 +333,72 @@ function toggleAuth() {
   document.getElementById('register-box').classList.toggle('hidden');
 }
 
-// ================= AUTH =================
+// ================= UI SOUNDS =================
+function playNavSound() {
+  try {
+    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+  } catch(e) {}
+}
+
+// ================= MODERATION (BAD WORDS & WARNINGS) =================
+const badWords = ['🔪🩸', '🔪💀', '😵🔪'];
+function checkBadWords(text) { return badWords.some(w => text.includes(w)); }
+function showWarning() {
+  warningLevel++;
+  let icon = document.getElementById('warn-icon');
+  let text = document.getElementById('warn-text');
+  if(warningLevel === 1) { icon.innerText = '🟨'; text.innerText = 'لقد أرسلت رموز ممنوعة هذا تحذير اذا استمررت سيتم حظر حسابك لمدة اسبوع.'; }
+  else if(warningLevel === 2) { icon.innerText = '🟧'; text.innerText = 'لقد أرسلت رموز ممنوعة هذا تحذير ثاني اذا استمررت سيتم حظر حسابك لمدة اسبوع.'; }
+  else { icon.innerText = '🟥'; text.innerText = 'هذا التحذير الاخير عزيزي المستخدم سيتم حظر حسابك لمدة سبعة أيام إن أرسلت ثانيةً او نشرت بمثلهِ.'; }
+  document.getElementById('warning-modal').classList.remove('hidden');
+}
+async function closeWarning() {
+  document.getElementById('warning-modal').classList.add('hidden');
+  if(warningLevel >= 3) {
+    let until = new Date(); until.setDate(until.getDate() + 7);
+    await supabaseClient.from('profiles').update({ msg_ban_expires: until.toISOString() }).eq('id', currentUser.id);
+    showToast('تم حظرك من إرسال الرسائل لمدة 7 أيام');
+    document.getElementById('chat-ban-msg').classList.remove('hidden');
+    document.getElementById('chat-input-area').classList.add('hidden');
+  }
+}
+
+// ================= AUTH & SESSION =================
 async function register() {
   let name = document.getElementById('reg-name').value.trim();
   let username = document.getElementById('reg-user').value.trim().toLowerCase().replace(/\s+/g, '');
   let pass = document.getElementById('reg-pass').value;
-  
-  if(!name || !username || !pass) { alert('يرجى تعبئة جميع الحقول'); return; }
-  if(pass.length < 6) { alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل'); return; }
-
+  if(!name || !username || !pass || pass.length < 6) { alert('بيانات غير صالحة'); return; }
   document.getElementById('reg-btn').innerText = 'جاري التسجيل...';
   try {
     let email = username + "@example.com";
     const { data: auth, error: authErr } = await supabaseClient.auth.signUp({ email, password: pass });
     if (authErr) throw authErr;
-    
-    const { error: profErr } = await supabaseClient.from('profiles').insert([{ id: auth.user.id, username: username, name: name }]);
-    if (profErr) throw profErr;
-    
-    alert('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.');
+    await supabaseClient.from('profiles').insert([{ id: auth.user.id, username: username, name: name }]);
+    alert('تم إنشاء الحساب بنجاح!');
     toggleAuth();
-  } catch (e) { 
-    alert('حدث خطأ أثناء التسجيل:\n' + e.message); 
-  } 
+  } catch (e) { alert(e.message); } 
   finally { document.getElementById('reg-btn').innerText = 'تسجيل'; }
 }
 
 async function login() {
   let username = document.getElementById('login-user').value.trim().toLowerCase().replace(/\s+/g, '');
   let pass = document.getElementById('login-pass').value;
-  
-  if(!username || !pass) { alert('أدخل اسم المستخدم وكلمة المرور'); return; }
-
   document.getElementById('login-btn').innerText = 'جاري الدخول...';
   try {
     const { error } = await supabaseClient.auth.signInWithPassword({ email: username + "@example.com", password: pass });
     if (error) throw error;
     checkSession();
-  } catch (e) { 
-    alert('خطأ في الدخول:\n' + e.message); 
-  } 
+  } catch (e) { alert('بيانات خاطئة'); } 
   finally { document.getElementById('login-btn').innerText = 'دخول'; }
 }
 
@@ -262,15 +408,21 @@ async function checkSession() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
-    
     if (profile) {
-      if(profile.is_banned) { alert("عذراً، هذا الحساب محظور."); logout(); return; }
+      if(profile.suspend_until && new Date(profile.suspend_until) > new Date()) {
+        document.getElementById('auth-page').classList.add('hidden');
+        document.getElementById('app-page').classList.add('hidden');
+        document.getElementById('susp-screen').classList.remove('hidden');
+        return;
+      }
       currentUser = profile;
       document.getElementById('auth-page').classList.add('hidden');
       document.getElementById('app-page').classList.remove('hidden');
       updateProfileUI();
       showPage('home');
       if(profile.role === 'admin') document.getElementById('admin-section').classList.remove('hidden');
+      if(profile.is_verified && !profile.encryption_pin) document.getElementById('pin-modal').classList.remove('hidden');
+      setupCallListener();
     }
   } else {
     document.getElementById('app-page').classList.add('hidden');
@@ -278,117 +430,173 @@ async function checkSession() {
   }
 }
 
-// ================= NAVIGATION =================
+// ================= APPEALS =================
+function showAppealForm() {
+  document.getElementById('appeal-form').classList.remove('hidden');
+  document.querySelector('.review-btn').classList.add('hidden');
+}
+async function submitAppeal() {
+  let name = document.getElementById('appeal-name').value;
+  let phone = document.getElementById('appeal-phone').value;
+  if(!name || !phone) { alert('أدخل البيانات'); return; }
+  await supabaseClient.from('appeals').insert([{ user_id: currentUser.id, full_name: name, phone: phone }]);
+  document.getElementById('appeal-form').classList.add('hidden');
+  document.getElementById('appeal-success').classList.remove('hidden');
+}
+
+// ================= VERIFICATION & SECURITY =================
+function openVerifyModal() {
+  if(currentUser.is_verified) { showToast('حسابك موثق بالفعل ☑️'); return; }
+  if(currentUser.verification_requested) { showToast('طلبك قيد المراجعة من قبل الأدمن'); return; }
+  document.getElementById('verify-modal').classList.remove('hidden');
+}
+async function sendVerifyRequest() {
+  await supabaseClient.from('profiles').update({ verification_requested: true }).eq('id', currentUser.id);
+  currentUser.verification_requested = true;
+  closeModal('verify-modal');
+  showToast('تم إرسال طلب التوثيق، يرجى الدفع للأدمن.');
+}
+function moveNext(current, index) {
+  if(current.value.length === 1) {
+    let next = document.querySelectorAll('.pin-digit')[index + 1];
+    if(next) next.focus();
+  }
+}
+async function savePin() {
+  let inputs = document.querySelectorAll('.pin-digit');
+  let pin = '';
+  inputs.forEach(i => pin += i.value);
+  if(pin.length !== 6) { showToast('يرجى إدخال 6 أرقام أو رموز'); return; }
+  await supabaseClient.from('profiles').update({ encryption_pin: pin }).eq('id', currentUser.id);
+  currentUser.encryption_pin = pin;
+  closeModal('pin-modal');
+  showToast('تم تفعيل طبقة الحماية ✅');
+}
+
+// ================= NAVIGATION & PROFILE =================
 function showPage(id) {
+  playNavSound();
   ['home', 'friends', 'chats', 'profile', 'settings', 'chat-room'].forEach(p => {
     let el = document.getElementById('page-' + p); if(el) el.classList.add('hidden');
     let nav = document.getElementById('nav-' + p); if(nav) nav.classList.remove('active');
   });
   document.getElementById('page-' + id).classList.remove('hidden');
   let nav = document.getElementById('nav-' + id); if(nav) nav.classList.add('active');
-  
   if (id === 'home') { loadPosts(); loadStories(); }
   if (id === 'friends') loadFriends();
   if (id === 'chats') loadChats();
 }
 
-// ================= PROFILE & POSTS =================
 function updateProfileUI() {
-  document.getElementById('prof-name').innerText = currentUser.name;
+  let vBadge = currentUser.is_verified ? ' <span style="color:red; font-size:16px;">[47☑️]</span>' : '';
+  document.getElementById('prof-name').innerHTML = currentUser.name + vBadge;
   document.getElementById('prof-username').innerText = '@' + currentUser.username;
   document.getElementById('prof-bio').value = currentUser.bio || '';
   if(currentUser.avatar_url) document.getElementById('prof-avatar').innerHTML = `<img src="${currentUser.avatar_url}">`;
+  if(currentUser.name_change_locked_until && new Date(currentUser.name_change_locked_until) > new Date()) {
+    document.getElementById('edit-name').disabled = true;
+    document.getElementById('name-lock-msg').style.display = 'block';
+  } else {
+    document.getElementById('edit-name').disabled = false;
+    document.getElementById('name-lock-msg').style.display = 'none';
+  }
+}
+
+async function updateProfileInfo() {
+  let newName = document.getElementById('edit-name').value.trim();
+  let newPass = document.getElementById('edit-pass').value;
+  if(newName && newName !== currentUser.name) {
+    if(currentUser.name_change_locked_until && new Date(currentUser.name_change_locked_until) > new Date()) { alert('لا يمكنك تغيير اسمك مره اخرى لمدة 47 يوماً.'); return; }
+    let count = currentUser.name_change_count || 0;
+    if(count >= 3) {
+      let lockDate = new Date(); lockDate.setDate(lockDate.getDate() + 47);
+      await supabaseClient.from('profiles').update({ name_change_locked_until: lockDate.toISOString(), name_change_count: 0 }).eq('id', currentUser.id);
+      alert('لا يمكنك تغيير اسمك مره اخرى لمدة 47 يوماً.'); return;
+    }
+    await supabaseClient.from('profiles').update({ name: newName, name_change_count: count + 1 }).eq('id', currentUser.id);
+    currentUser.name = newName; currentUser.name_change_count = count + 1;
+  }
+  if(newPass && newPass.length >= 6) {
+    const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+    if(error) { alert(error.message); } else { showToast('تم تغيير كلمة المرور'); }
+  }
+  showToast('تم تحديث البيانات'); updateProfileUI();
 }
 
 async function saveProfile() {
   let bio = document.getElementById('prof-bio').value.trim();
   await supabaseClient.from('profiles').update({ bio: bio }).eq('id', currentUser.id);
-  currentUser.bio = bio; showToast('تم حفظ التعديلات');
+  currentUser.bio = bio; showToast('تم الحفظ');
 }
-
 async function uploadAvatar() {
   let file = document.getElementById('avatar-img').files[0]; if(!file) return;
-  showToast('جاري رفع الصورة...');
+  showToast('جاري الرفع...');
   let fn = `avatars/${currentUser.id}_${Date.now()}.png`;
   await supabaseClient.storage.from('media').upload(fn, file);
   let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
   await supabaseClient.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
-  currentUser.avatar_url = data.publicUrl; updateProfileUI(); showToast('تم تغيير الصورة');
+  currentUser.avatar_url = data.publicUrl; updateProfileUI();
+}
+async function removeAvatar() {
+  await supabaseClient.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+  currentUser.avatar_url = null; document.getElementById('prof-avatar').innerHTML = '👤';
 }
 
+// ================= POSTS & STORIES =================
 async function createPost() {
   let text = document.getElementById('new-post-text').value.trim();
   if(!text) return;
+  if(checkBadWords(text)) { showWarning(); document.getElementById('new-post-text').value = ''; return; }
   document.getElementById('new-post-text').value = '';
   await supabaseClient.from('posts').insert([{ user_id: currentUser.id, content: text }]);
   loadPosts();
 }
-
 async function uploadPost() {
   let file = document.getElementById('post-img').files[0]; if(!file) return;
-  showToast('جاري رفع الصورة...');
+  showToast('جاري الرفع...');
   let fn = `posts/${currentUser.id}_${Date.now()}.png`;
   await supabaseClient.storage.from('media').upload(fn, file);
   let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
   await supabaseClient.from('posts').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
-  loadPosts(); showToast('تم النشر');
+  loadPosts();
 }
-
 async function loadPosts() {
-  let { data: posts } = await supabaseClient.from('posts').select('*, profiles(name, username, avatar_url)').order('created_at', { ascending: false });
+  let { data: posts } = await supabaseClient.from('posts').select('*, profiles(name, username, avatar_url, is_verified)').order('created_at', { ascending: false });
   if(!posts) return;
   document.getElementById('posts-list').innerHTML = posts.map(p => `
     <div class="box">
       <div class="post-header">
         <div class="post-avatar">${p.profiles.avatar_url ? `<img src="${p.profiles.avatar_url}">` : '👤'}</div>
-        <div>
-          <div style="font-weight:bold; font-size:14px;">${p.profiles.name}</div>
-          <div style="font-size:11px; color:#aaa;">@${p.profiles.username}</div>
-        </div>
+        <div><div style="font-weight:bold; font-size:14px;">${p.profiles.name} ${p.profiles.is_verified ? '<span style="color:red;">[47☑️]</span>' : ''}</div><div style="font-size:11px; color:#aaa;">@${p.profiles.username}</div></div>
       </div>
       ${p.content ? `<p style="font-size:14px;">${p.content}</p>` : ''}
       ${p.media_url ? `<img src="${p.media_url}" style="width:100%; border-radius:8px; margin-top:10px;">` : ''}
-      <div class="report-btn" onclick="openReport('${p.user_id}', 'منشور')">إبلاغ عن المنشور</div>
+      <div class="report-btn" onclick="openReport('${p.user_id}')">إبلاغ عن المنشور</div>
     </div>
   `).join('');
 }
-
-// ================= STORIES =================
 async function loadStories() {
   let bar = document.getElementById('story-bar');
-  let { data: stories } = await supabaseClient.from('stories').select('*, profiles(name, avatar_url)').order('created_at', { ascending: false });
+  let twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+  let { data: stories } = await supabaseClient.from('stories').select('*, profiles(name, avatar_url, is_verified)').gte('created_at', twelveHoursAgo).order('created_at', { ascending: false });
   if(!stories) return;
-  
-  let html = `<div class="story-item" onclick="document.getElementById('story-file').click()">
-    <div class="story-avatar" style="background:#333; display:flex; justify-content:center; align-items:center;">+</div>
-    <span style="font-size:10px;">إضافة</span>
-  </div>`;
-  
+  let html = `<div class="story-item" onclick="document.getElementById('story-file').click()"><div class="story-avatar" style="background:#333; display:flex; justify-content:center; align-items:center;">+</div><span style="font-size:10px;">إضافة</span></div>`;
   let uniqueUsers = new Set();
   stories.forEach(s => {
-    if(uniqueUsers.has(s.user_id)) return;
-    uniqueUsers.add(s.user_id);
-    html += `<div class="story-item" onclick="viewStory('${s.media_url}')">
-      <div class="story-avatar">${s.profiles.avatar_url ? `<img src="${s.profiles.avatar_url}">` : ''}</div>
-      <span style="font-size:10px;">${s.profiles.name.split(' ')[0]}</span>
-    </div>`;
+    if(uniqueUsers.has(s.user_id)) return; uniqueUsers.add(s.user_id);
+    html += `<div class="story-item" onclick="viewStory('${s.media_url}')"><div class="story-avatar">${s.profiles.avatar_url ? `<img src="${s.profiles.avatar_url}">` : ''}</div><span style="font-size:10px;">${s.profiles.name.split(' ')[0]}</span></div>`;
   });
   bar.innerHTML = html;
 }
-
-let storyInput = document.createElement('input');
-storyInput.type = 'file'; storyInput.id = 'story-file'; storyInput.accept = 'image/*'; storyInput.style.display = 'none';
-document.body.appendChild(storyInput);
+let storyInput = document.createElement('input'); storyInput.type = 'file'; storyInput.id = 'story-file'; storyInput.accept = 'image/*,video/*'; storyInput.style.display = 'none'; document.body.appendChild(storyInput);
 storyInput.onchange = async () => {
   let file = storyInput.files[0]; if(!file) return;
-  showToast('جاري رفع القصة...');
   let fileName = `stories/${currentUser.id}_${Date.now()}.png`;
   await supabaseClient.storage.from('media').upload(fileName, file);
   let { data } = supabaseClient.storage.from('media').getPublicUrl(fileName);
   await supabaseClient.from('stories').insert([{ user_id: currentUser.id, media_url: data.publicUrl }]);
-  loadStories(); showToast('تمت إضافة القصة');
+  loadStories();
 };
-
 function viewStory(url) {
   let overlay = document.createElement('div');
   overlay.style = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;justify-content:center;align-items:center;';
@@ -397,197 +605,336 @@ function viewStory(url) {
   document.body.appendChild(overlay);
 }
 
-// ================= FRIENDS & REPORTING =================
+// ================= FRIENDS & DELETED MODAL =================
 async function loadFriends() {
   let q = document.getElementById('search-friend').value.toLowerCase();
-  let { data: users } = await supabaseClient.from('profiles').select('*').neq('id', currentUser.id).eq('is_banned', false);
+  let { data: users } = await supabaseClient.from('profiles').select('*').neq('id', currentUser.id);
   if(!users) return;
   let filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q));
-  document.getElementById('friends-list').innerHTML = filtered.map(u => `
+  
+  document.getElementById('friends-list').innerHTML = filtered.map(u => {
+    let isSuspended = u.suspend_until && new Date(u.suspend_until) > new Date();
+    let clickAction = isSuspended ? `onclick="showDeletedModal()"` : `onclick="startChat('${u.id}', '${u.name}')"`;
+    return `
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding:10px 0;">
-      <div style="display:flex; gap:10px; align-items:center;">
+      <div style="display:flex; gap:10px; align-items:center;" ${clickAction}>
         <div class="post-avatar">${u.avatar_url ? `<img src="${u.avatar_url}">` : '👤'}</div>
-        <div><strong>${u.name}</strong><br><small>@${u.username}</small></div>
+        <div><strong>${u.name} ${u.is_verified ? '<span style="color:red;">[47☑️]</span>' : ''} ${isSuspended ? '<span style="color:red; font-size:10px;">(معلق)</span>' : ''}</strong><br><small>@${u.username}</small></div>
       </div>
       <div style="display:flex; gap:5px;">
-        <button class="btn-green" style="width:auto; padding:5px;" onclick="startChat('${u.id}', '${u.name}')">💬</button>
-        <button class="btn-red" style="width:auto; padding:5px;" onclick="openReport('${u.id}', 'مستخدم')">🚨</button>
+        ${!isSuspended ? `<button class="btn-green" style="width:auto; padding:5px;" onclick="startChat('${u.id}', '${u.name}')">💬</button>` : ''}
+        <button class="btn-red" style="width:auto; padding:5px;" onclick="openReport('${u.id}')">🚨</button>
       </div>
+    </div>`;
+  }).join('');
+}
+function showDeletedModal() {
+  let modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box" style="text-align:center;">
+      <h3 style="color:#dc3545; margin-bottom:15px;">هذا المحتوى محذوف حالياً</h3>
+      <p style="font-size:13px; color:#aaa; margin-bottom:20px;">لا يمكن عرض الملف الشخصي لهذا المستخدم في الوقت الحالي.</p>
+      <button class="btn-red" onclick="this.closest('.modal-overlay').remove()" style="margin-bottom:10px;">موافق</button>
+      <button class="btn-gray" onclick="location.reload()">🔄 تحديث الصفحة</button>
     </div>
-  `).join('');
+  `;
+  document.body.appendChild(modal);
 }
-
-function openReport(id, type) {
-  reportTargetId = id;
-  document.getElementById('report-modal').classList.remove('hidden');
-}
-
+function openReport(id) { reportTargetId = id; document.getElementById('report-modal').classList.remove('hidden'); }
 async function submitReport() {
   let reason = document.getElementById('report-reason').value;
   await supabaseClient.from('reports').insert([{ reporter_id: currentUser.id, reported_user_id: reportTargetId, reason: reason }]);
-  closeModal('report-modal');
-  showToast('تم إرسال البلاغ للإدارة');
+  closeModal('report-modal'); showToast('تم إرسال البلاغ');
 }
 
 // ================= CHATS & GROUPS =================
 async function createGroupChat() {
-  let name = prompt("اسم المجموعة:");
-  if(!name) return;
-  const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'group', name: name, created_by: currentUser.id }]).select().single();
+  let name = prompt("اسم المجموعة:"); if(!name) return;
+  const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'group', name: name, created_by: currentUser.id, admins: [currentUser.id] }]).select().single();
   await supabaseClient.from('chat_members').insert([{ chat_id: newChat.id, user_id: currentUser.id }]);
-  loadChats(); showToast('تم إنشاء المجموعة');
+  loadChats();
 }
-
 async function startChat(targetId, targetName) {
   const { data: existing } = await supabaseClient.from('chat_members').select('chat_id').eq('user_id', currentUser.id);
   let chatId = null;
-  if(existing) {
-    for(let c of existing) {
-      const { data: members } = await supabaseClient.from('chat_members').select('user_id').eq('chat_id', c.chat_id);
-      if(members.length === 2 && members.find(m => m.user_id === targetId)) { chatId = c.chat_id; break; }
-    }
-  }
-  if(!chatId) {
-    const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'private', created_by: currentUser.id }]).select().single();
-    chatId = newChat.id;
-    await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: currentUser.id }]);
-    await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: targetId }]);
-  }
+  if(existing) { for(let c of existing) { const { data: members } = await supabaseClient.from('chat_members').select('user_id').eq('chat_id', c.chat_id); if(members.length === 2 && members.find(m => m.user_id === targetId)) { chatId = c.chat_id; break; } } }
+  if(!chatId) { const { data: newChat } = await supabaseClient.from('chats').insert([{ type: 'private', created_by: currentUser.id }]).select().single(); chatId = newChat.id; await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: currentUser.id }]); await supabaseClient.from('chat_members').insert([{ chat_id: chatId, user_id: targetId }]); }
   openChat(chatId, targetName, 'private');
 }
-
 async function loadChats() {
   const { data: chats } = await supabaseClient.from('chat_members').select('chat_id, chats(id, type, name)').eq('user_id', currentUser.id);
   if(!chats || chats.length === 0) { document.getElementById('chats-list').innerHTML = '<p style="color:#aaa;">لا توجد دردشات.</p>'; return; }
   let html = '';
   for(let c of chats) {
     let title = c.chats.name || 'محادثة';
-    if(c.chats.type === 'private') {
-      const { data: members } = await supabaseClient.from('chat_members').select('user_id, profiles(name)').eq('chat_id', c.chat_id).neq('user_id', currentUser.id);
-      if(members && members.length > 0) title = members[0].profiles.name;
-    }
-    html += `<div style="padding:15px; border-bottom:1px solid #333; cursor:pointer;" onclick="openChat(${c.chat_id}, '${title}', '${c.chats.type}')">
-      <strong>${title}</strong>
-    </div>`;
+    if(c.chats.type === 'private') { const { data: members } = await supabaseClient.from('chat_members').select('user_id, profiles(name, is_verified)').eq('chat_id', c.chat_id).neq('user_id', currentUser.id); if(members && members.length > 0) title = members[0].profiles.name + (members[0].profiles.is_verified ? ' [47☑️]' : ''); }
+    html += `<div style="padding:15px; border-bottom:1px solid #333; cursor:pointer;" onclick="openChat(${c.chat_id}, '${title}', '${c.chats.type}')"><strong>${title}</strong></div>`;
   }
   document.getElementById('chats-list').innerHTML = html;
 }
-
 async function openChat(id, title, type) {
-  currentChatId = id;
-  currentChatType = type;
-  document.getElementById('chat-room-title').innerText = title;
-  showPage('chat-room');
-  loadMessages();
+  currentChatId = id; currentChatType = type; document.getElementById('chat-room-title').innerText = title;
+  let { data: chatData } = await supabaseClient.from('chats').select('*').eq('id', id).single(); currentChatData = chatData;
+  let { data: memberCheck } = await supabaseClient.from('chat_members').select('*').eq('chat_id', id).eq('user_id', currentUser.id).single();
   
-  let banEnd = currentUser.msg_ban_expires ? new Date(currentUser.msg_ban_expires) : null;
-  if(banEnd && banEnd > new Date()) {
-    document.getElementById('chat-ban-msg').classList.remove('hidden');
-    document.getElementById('chat-input-area').classList.add('hidden');
+  if(type === 'group' && !memberCheck) {
+    document.getElementById('chat-removed-msg').classList.remove('hidden'); document.getElementById('chat-input-area').classList.add('hidden');
+    document.getElementById('chat-messages').innerHTML = ''; showPage('chat-room'); return;
+  } else { document.getElementById('chat-removed-msg').classList.add('hidden'); }
+
+  if(currentUser.msg_ban_expires && new Date(currentUser.msg_ban_expires) > new Date()) {
+    document.getElementById('chat-ban-msg').classList.remove('hidden'); document.getElementById('chat-input-area').classList.add('hidden');
   } else {
-    document.getElementById('chat-ban-msg').classList.add('hidden');
-    document.getElementById('chat-input-area').classList.remove('hidden');
+    document.getElementById('chat-ban-msg').classList.add('hidden'); document.getElementById('chat-input-area').classList.remove('hidden');
   }
-
+  showPage('chat-room'); loadMessages();
   if(chatChannel) supabaseClient.removeChannel(chatChannel);
-  chatChannel = supabaseClient.channel('chat_'+id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, () => loadMessages()).subscribe();
+  chatChannel = supabaseClient.channel('chat_'+id).on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, () => loadMessages()).subscribe();
 }
-
 async function loadMessages() {
-  const { data: msgs } = await supabaseClient.from('messages').select('*, profiles(name)').eq('chat_id', currentChatId).order('created_at', { ascending: true });
-  let container = document.getElementById('chat-messages');
-  if(!msgs) return;
+  const { data: msgs } = await supabaseClient.from('messages').select('*, profiles(name, suspend_until, is_verified)').eq('chat_id', currentChatId).order('created_at', { ascending: true });
+  let container = document.getElementById('chat-messages'); if(!msgs) return;
   container.innerHTML = msgs.map(m => {
+    if(m.is_deleted) return `<div style="text-align:center; color:#aaa; font-size:12px; margin:5px 0;">قام المستخدم (${m.profiles ? m.profiles.name : 'مجهول'}) بحذف رسالته.</div>`;
+    if(m.profiles && m.profiles.suspend_until && new Date(m.profiles.suspend_until) > new Date()) {
+      return `<div style="text-align:center; color:#aaa; font-size:12px; margin:5px 0;">تمت إزالة هذا الرسالة بسبب مخالفة قواعدنا.</div>`;
+    }
     let isMe = m.sender_id === currentUser.id;
-    return `<div class="msg-container ${isMe ? 'mine' : 'other'}">
-      <div class="msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}">
-        ${!isMe ? `<div style="font-size:10px;color:#aaa;">${m.profiles.name}</div>` : ''}
-        ${m.content ? m.content : ''}
-        ${m.media_url ? `<img src="${m.media_url}" style="max-width:100%; border-radius:8px; margin-top:5px;">` : ''}
-        ${!isMe ? `<div class="report-btn" onclick="openReport('${m.sender_id}', 'رسالة')">إبلاغ</div>` : ''}
+    let reactions = m.reactions || {};
+    let reactHtml = Object.keys(reactions).length > 0 ? `<div style="font-size:12px; margin-top:5px;">${Object.values(reactions).join(' ')}</div>` : '';
+    let vBadge = m.profiles && m.profiles.is_verified ? ' <span style="color:red;">[47☑️]</span>' : '';
+    return `<div class="msg-container ${isMe ? 'mine' : 'other'}"><div class="msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}">
+      ${!isMe ? `<div style="font-size:10px;color:#aaa;">${m.profiles.name} ${vBadge}</div>` : ''}
+      ${m.content ? m.content : ''}
+      ${m.media_url ? `<img src="${m.media_url}" style="max-width:100%; border-radius:8px; margin-top:5px;">` : ''}
+      ${reactHtml}
+      <div style="margin-top:5px; display:flex; gap:5px; font-size:12px;">
+        <span style="cursor:pointer;" onclick="reactMsg(${m.id}, '❤️')">❤️</span>
+        <span style="cursor:pointer;" onclick="reactMsg(${m.id}, '👍')">👍</span>
+        <span style="cursor:pointer; color:red;" onclick="deleteMsg(${m.id}, 'me')">حذف عندي</span>
+        ${isMe ? `<span style="cursor:pointer; color:red;" onclick="deleteMsg(${m.id}, 'all')">حذف للجميع</span>` : ''}
       </div>
-    </div>`;
+    </div></div>`;
   }).join('');
   container.scrollTop = container.scrollHeight;
 }
-
 async function sendMessage() {
-  let text = document.getElementById('chat-input').value.trim();
-  if(!text || !currentChatId) return;
+  if(currentUser.msg_ban_expires && new Date(currentUser.msg_ban_expires) > new Date()) return;
+  let text = document.getElementById('chat-input').value.trim(); if(!text) return;
+  if(checkBadWords(text)) { showWarning(); document.getElementById('chat-input').value = ''; return; }
   document.getElementById('chat-input').value = '';
   await supabaseClient.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, content: text }]);
 }
-
 async function sendChatMedia() {
-  let file = document.getElementById('chat-img').files[0]; if(!file || !currentChatId) return;
-  showToast('جاري الرفع...');
+  let file = document.getElementById('chat-img').files[0]; if(!file) return;
   let fn = `chat/${currentUser.id}_${Date.now()}.png`;
   await supabaseClient.storage.from('media').upload(fn, file);
   let { data } = supabaseClient.storage.from('media').getPublicUrl(fn);
   await supabaseClient.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, media_url: data.publicUrl }]);
 }
+async function reactMsg(id, emoji) {
+  let { data: msg } = await supabaseClient.from('messages').select('reactions').eq('id', id).single();
+  let reactions = msg.reactions || {}; reactions[currentUser.id] = emoji;
+  await supabaseClient.from('messages').update({ reactions }).eq('id', id); loadMessages();
+}
+async function deleteMsg(id, type) {
+  if(type === 'all') await supabaseClient.from('messages').update({ is_deleted: true }).eq('id', id);
+  else showToast('تم الحذف عندك');
+}
 
-function openChatSettings() { showToast("إعدادات المحادثة قريباً"); }
+// Group Settings
+function openGroupSettings() {
+  if(currentChatType !== 'group') return;
+  document.getElementById('group-settings-modal').classList.remove('hidden'); loadGroupMembers();
+}
+async function loadGroupMembers() {
+  const { data: members } = await supabaseClient.from('chat_members').select('user_id, profiles(username, name, is_verified)').eq('chat_id', currentChatId);
+  let html = '';
+  members.forEach(m => {
+    let isAdmin = currentChatData.admins && currentChatData.admins.includes(m.user_id);
+    let btn = (currentChatData.admins && currentChatData.admins.includes(currentUser.id) && m.user_id !== currentUser.id) ? `<button class="btn-red" style="width:auto; padding:2px 5px; font-size:10px;" onclick="removeMember('${m.user_id}', '${m.profiles.username}')">إزالة</button>` : '';
+    html += `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #333;"><span>${m.profiles.name} ${m.profiles.is_verified ? '<span style="color:red;">[47☑️]</span>' : ''} ${isAdmin ? '(أدمن)' : ''}</span>${btn}</div>`;
+  });
+  document.getElementById('group-members-list').innerHTML = html;
+}
+async function addMemberToGroup() {
+  let uname = document.getElementById('add-member-username').value.trim().toLowerCase();
+  const { data: user } = await supabaseClient.from('profiles').select('id').eq('username', uname).single();
+  if(!user) { showToast('المستخدم غير موجود'); return; }
+  await supabaseClient.from('chat_members').insert([{ chat_id: currentChatId, user_id: user.id }]);
+  showToast('تمت الإضافة'); document.getElementById('add-member-username').value = '';
+}
+async function removeMember(userId, username) {
+  await supabaseClient.from('chat_members').delete().eq('chat_id', currentChatId).eq('user_id', userId);
+  await supabaseClient.from('messages').insert([{ chat_id: currentChatId, sender_id: currentUser.id, content: `قام المسؤول بإزالة المستخدم (@${username}) من المجموعة.` }]);
+  showToast('تمت الإزالة'); loadGroupMembers();
+}
+
+// ================= CALLS =================
+function setupCallListener() {
+  if(callChannel) supabaseClient.removeChannel(callChannel);
+  callChannel = supabaseClient.channel('call_channel_'+currentUser.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'calls', filter: `receiver_id=eq.${currentUser.id}` }, payload => {
+      if(payload.new.status === 'ringing') {
+        currentCallId = payload.new.id; isCaller = false;
+        supabaseClient.from('profiles').select('name').eq('id', payload.new.caller_id).single().then(res => {
+          document.getElementById('incoming-caller-name').innerText = res.data.name;
+          document.getElementById('incoming-call-modal').classList.remove('hidden');
+        });
+      }
+    }).subscribe();
+}
+async function initiateCall() {
+  if(currentChatType !== 'private') { showToast('المكالمات الجماعية قريباً'); return; }
+  const { data: members } = await supabaseClient.from('chat_members').select('user_id').eq('chat_id', currentChatId).neq('user_id', currentUser.id);
+  if(!members || members.length === 0) return;
+  let receiverId = members[0].user_id;
+  const { data: callData, error } = await supabaseClient.from('calls').insert([{ caller_id: currentUser.id, receiver_id: receiverId, status: 'ringing' }]).select().single();
+  if(error) { showToast('فشل الاتصال'); return; }
+  currentCallId = callData.id; isCaller = true;
+  document.getElementById('active-caller-name').innerText = 'جاري الاتصال...';
+  document.getElementById('call-timer').innerText = '00:00';
+  document.getElementById('active-call-modal').classList.remove('hidden');
+  supabaseClient.channel('call_status_'+currentCallId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls', filter: `id=eq.${currentCallId}` }, payload => {
+      if(payload.new.status === 'active') { startCallTimer(); }
+      else if(payload.new.status === 'rejected' || payload.new.status === 'ended') { endCallLocally(); }
+    }).subscribe();
+}
+async function acceptCall() {
+  document.getElementById('incoming-call-modal').classList.add('hidden');
+  document.getElementById('active-caller-name').innerText = 'المكالمة جارية...';
+  document.getElementById('active-call-modal').classList.remove('hidden');
+  await supabaseClient.from('calls').update({ status: 'active' }).eq('id', currentCallId);
+  startCallTimer();
+}
+async function rejectCall() {
+  document.getElementById('incoming-call-modal').classList.add('hidden');
+  }
+
+function startCallTimer() {
+  callSeconds = 0; document.getElementById('call-timer').innerText = '00:00';
+  clearInterval(callTimerInterval);
+  callTimerInterval = setInterval(() => {
+    callSeconds++;
+    let m = Math.floor(callSeconds / 60).toString().padStart(2, '0');
+    let s = (callSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('call-timer').innerText = `${m}:${s}`;
+  }, 1000);
+}
+async function endCall() {
+  if(currentCallId) await supabaseClient.from('calls').update({ status: 'ended', duration: callSeconds }).eq('id', currentCallId);
+  endCallLocally();
+}
+function endCallLocally() {
+  document.getElementById('active-call-modal').classList.add('hidden');
+  document.getElementById('incoming-call-modal').classList.add('hidden');
+  clearInterval(callTimerInterval); currentCallId = null; callSeconds = 0;
+}
 
 // ================= ADMIN DASHBOARD =================
 async function loadAdminUsers() {
   const { data: users } = await supabaseClient.from('profiles').select('*').neq('role', 'admin');
   let html = '';
   users.forEach(u => {
-    let banEnd = u.msg_ban_expires ? new Date(u.msg_ban_expires) : null;
-    let isMuted = banEnd && banEnd > new Date();
+    let isSusp = u.suspend_until && new Date(u.suspend_until) > new Date();
     html += `<div style="border-bottom:1px solid #444; padding:10px 0;">
-      <div>${u.name} (@${u.username}) ${u.is_banned ? '<span style="color:red;">[محظور]</span>' : ''}</div>
+      <div>${u.name} (@${u.username})</div>
       <div style="display:flex; gap:5px; margin-top:5px;">
-        <button onclick="banUser('${u.id}')" class="btn-red" style="padding:5px; font-size:11px;">حظر</button>
-        <button onclick="muteUser('${u.id}')" class="btn-gray" style="padding:5px; font-size:11px;">${isMuted ? 'إلغاء الكتم' : 'كتم (3 أيام)'}</button>
+        <button onclick="openSuspend('${u.id}')" class="btn-red" style="padding:5px; font-size:11px;">${isSusp ? 'إلغاء التعليق' : 'تعليق'}</button>
+        <button onclick="banUser('${u.id}')" class="btn-gray" style="padding:5px; font-size:11px;">حظر نهائي</button>
       </div>
     </div>`;
   });
   document.getElementById('admin-content').innerHTML = html;
 }
-
+async function confirmSuspend() {
+  let days = document.getElementById('suspend-duration').value;
+  let until = new Date(); until.setDate(until.getDate() + parseInt(days));
+  await supabaseClient.from('profiles').update({ suspend_until: until.toISOString() }).eq('id', suspendTargetId);
+  closeModal('suspend-user-modal'); loadAdminUsers();
+}
 async function banUser(id) {
   if(!confirm("حظر نهائي؟")) return;
-  await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', id);
-  loadAdminUsers();
+  await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', id); loadAdminUsers();
 }
-
-async function muteUser(id) {
-  let date = new Date(); date.setDate(date.getDate() + 3);
-  await supabaseClient.from('profiles').update({ msg_ban_expires: date.toISOString() }).eq('id', id);
-  loadAdminUsers(); showToast('تم الكتم 3 أيام');
-}
-
 async function loadAdminReports() {
-  const { data: reports } = await supabaseClient.from('reports').select('*, profiles!reports_reporter_id_fkey(name), reported:reported_user_id(name)').eq('status', 'pending');
-  if(!reports || reports.length === 0) { document.getElementById('admin-content').innerHTML = '<p>لا توجد بلاغات جديدة.</p>'; return; }
+  const { data: reports } = await supabaseClient.from('reports').select('*, profiles!reports_reporter_id_fkey(name), reported:reported_user_id(name, id)').eq('status', 'pending');
+  if(!reports || reports.length === 0) { document.getElementById('admin-content').innerHTML = '<p>لا توجد بلاغات.</p>'; return; }
   let html = '';
   reports.forEach(r => {
-    html += `<div style="border:1px solid #dc3545; padding:10px; border-radius:8px; margin-bottom:10px;">
-      <p>المُبلغ: ${r.profiles.name}</p>
-      <p>ضد: <span style="color:red;">${r.reported.name}</span></p>
-      <p>السبب: ${r.reason}</p>
-      <div style="display:flex; gap:5px; margin-top:5px;">
-        <button class="btn-red" onclick="resolveReport(${r.id}, 'action')" style="padding:5px; font-size:11px;">حظر المستخدم</button>
-        <button class="btn-gray" onclick="resolveReport(${r.id}, 'ignore')" style="padding:5px; font-size:11px;">تجاهل البلاغ</button>
+    html += `<div style="border:1px solid #dc3545; padding:10px; margin-bottom:10px;">
+      <p>المبلغ: ${r.profiles.name} ضد: ${r.reported.name}</p><p>السبب: ${r.reason}</p>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-red" onclick="resolveReport(${r.id}, '${r.reported.id}', 'action')">تعليق المستخدم</button>
+        <button class="btn-gray" onclick="resolveReport(${r.id}, '', 'ignore')">تجاهل</button>
       </div>
     </div>`;
   });
   document.getElementById('admin-content').innerHTML = html;
 }
-
-async function resolveReport(id, action) {
+async function resolveReport(id, targetId, action) {
   await supabaseClient.from('reports').update({ status: 'resolved' }).eq('id', id);
   if(action === 'action') {
-    let { data: rep } = await supabaseClient.from('reports').select('reported_user_id').eq('id', id).single();
-    await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', rep.reported_user_id);
-    showToast('تم حظر المستخدم');
+    let until = new Date(); until.setDate(until.getDate() + 3);
+    await supabaseClient.from('profiles').update({ suspend_until: until.toISOString() }).eq('id', targetId);
+    showToast('تم تعليق المستخدم');
   }
   loadAdminReports();
+}
+async function loadAdminAppeals() {
+  const { data: appeals } = await supabaseClient.from('appeals').select('*, profiles(name, username)').eq('status', 'pending');
+  if(!appeals || appeals.length === 0) { document.getElementById('admin-content').innerHTML = '<p>لا توجد مراجعات.</p>'; return; }
+  let html = '';
+  appeals.forEach(a => {
+    html += `<div style="border:1px solid #00ff00; padding:10px; margin-bottom:10px;">
+      <p>المستخدم: @${a.profiles.username} (${a.profiles.name})</p>
+      <p>الاسم الثلاثي: ${a.full_name}</p><p>الهاتف: ${a.phone}</p>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-green" onclick="approveAppeal(${a.id}, '${a.user_id}')">فك التعليق</button>
+        <button class="btn-red" onclick="rejectAppeal(${a.id}, '${a.user_id}')">تعطيل نهائي</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('admin-content').innerHTML = html;
+}
+async function approveAppeal(appealId, userId) {
+  await supabaseClient.from('appeals').update({ status: 'accepted' }).eq('id', appealId);
+  await supabaseClient.from('profiles').update({ suspend_until: null }).eq('id', userId);
+  loadAdminAppeals(); showToast('تم فك التعليق');
+}
+async function rejectAppeal(appealId, userId) {
+  await supabaseClient.from('appeals').update({ status: 'rejected' }).eq('id', appealId);
+  await supabaseClient.from('profiles').update({ is_banned: true }).eq('id', userId);
+  loadAdminAppeals(); showToast('تم التعطيل النهائي');
+}
+async function loadAdminVerifications() {
+  const { data: reqs } = await supabaseClient.from('profiles').select('*').eq('verification_requested', true).eq('is_verified', false);
+  if(!reqs || reqs.length === 0) { document.getElementById('admin-content').innerHTML = '<p>لا توجد طلبات توثيق.</p>'; return; }
+  let html = '';
+  reqs.forEach(u => {
+    html += `<div style="border:1px solid #ffd700; padding:10px; margin-bottom:10px;">
+      <p>المستخدم: @${u.username} (${u.name})</p>
+      <p style="color:#aaa; font-size:11px;">حالة الدفع: قيد المراجعة (يرجى التحقق من الكارد)</p>
+      <div style="display:flex; gap:5px; margin-top:5px;">
+        <button class="btn-green" onclick="approveVerification('${u.id}')">منح العلامة</button>
+        <button class="btn-red" onclick="rejectVerification('${u.id}')">رفض الطلب</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('admin-content').innerHTML = html;
+}
+async function approveVerification(userId) {
+  await supabaseClient.from('profiles').update({ is_verified: true, verification_requested: false }).eq('id', userId);
+  showToast('تم منح العلامة'); loadAdminVerifications();
+}
+async function rejectVerification(userId) {
+  await supabaseClient.from('profiles').update({ verification_requested: false }).eq('id', userId);
+  showToast('تم رفض الطلب'); loadAdminVerifications();
 }
 
 checkSession();
 </script>
 </body>
-  </html>
+</html> 
