@@ -1,11 +1,11 @@
 {
   "name": "Rat-Man47",
   "short_name": "Rat-Man47",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#0f0f13",
   "theme_color": "#dc3545",
-  "description": "تطبيق Rat-Man47 للتواصل الاجتماعي",
+  "description": "تطبيق Rat-Man47",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3662/3662817.png",
